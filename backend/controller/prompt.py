@@ -7,7 +7,7 @@ class Prompt:
         Today Date & Time : {now}
 
         """+"""
-        IMPORTANT: ask user minimum question.
+        IMPORTANT: Do not make user confirm the data or timezone , you should calculate yourself
 
         Dont tell user about chat history , and all techincal stuff like JSON (IMPORTANT)
         Always Focus on last msg of user
@@ -65,7 +65,7 @@ class Prompt:
                   and Return in JSON format:
                   { 
                   occupied:true , 
-                  response:str
+                  response
                   }
                   Slot data
                 """+f""""{slots_data}

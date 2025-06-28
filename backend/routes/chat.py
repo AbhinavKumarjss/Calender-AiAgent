@@ -4,7 +4,7 @@ from typing import List
 from fastapi.responses import JSONResponse
 from ..controller.controller import agent
 
-AGENT_MEMORY = 10
+AGENT_MEMORY = 20
 
 class ChatRequest(BaseModel):
     message:List[str]

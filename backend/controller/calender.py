@@ -2,12 +2,64 @@ from __future__ import print_function
 import datetime
 import os.path
 import pickle
+import json
 
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request
+from google_auth_oauthlib.flow import Flow
+from backend.config import config
+
 # If modifying these SCOPES, delete the file token.pickle.
 SCOPES = ['https://www.googleapis.com/auth/calendar']
+
+def get_creds():
+    """
+    Get Google Calendar credentials using environment variables.
+    Returns:
+        Credentials: Google OAuth2 credentials
+    """
+    creds = None
+    
+    # Check if we have a stored token
+    if os.path.exists('token.pickle'):
+        with open('token.pickle', 'rb') as token:
+            creds = pickle.load(token)
+    
+    # If there are no (valid) credentials available, let the user log in
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            # Create client config from environment variables
+            client_config = {
+                "web": {
+                    "client_id": config.GOOGLE_CLIENT_ID,
+                    "client_secret": config.GOOGLE_CLIENT_SECRET,
+                    "auth_uri": config.GOOGLE_AUTH_URI or "https://accounts.google.com/o/oauth2/auth",
+                    "token_uri": config.GOOGLE_TOKEN_URI or "https://oauth2.googleapis.com/token",
+                    "auth_provider_x509_cert_url": config.GOOGLE_CERT_URL or "https://www.googleapis.com/oauth2/v1/certs",
+                    "redirect_uris": [config.GOOGLE_REDIRECT_URI or "http://localhost"]
+                }
+            }
+            
+            # Create flow from client config
+            flow = Flow.from_client_config(
+                client_config,
+                scopes=SCOPES,
+                redirect_uri=config.GOOGLE_REDIRECT_URI or "http://localhost"
+            )
+            
+            # Run the OAuth flow
+            creds = flow.run_local_server(port=0)
+        
+        # Save the credentials for the next run
+        with open('token.pickle', 'wb') as token:
+            pickle.dump(creds, token)
+    
+    return creds
 
 def book_appointment(event_json):
     """
@@ -27,21 +79,9 @@ def book_appointment(event_json):
     attendees = event_json.get('attendees', [])
     reminders = event_json.get('reminders', None)
 
-    creds = None
-    if os.path.exists('token.pickle'):
-        with open('token.pickle', 'rb') as token:
-            creds = pickle.load(token)
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES)
-            creds = flow.run_local_server(port=0)
-        with open('token.pickle', 'wb') as token:
-            pickle.dump(creds, token)
 
-    service = build('calendar', 'v3', credentials=creds)
+
+    service = build('calendar', 'v3', credentials=get_creds())
 
     event = {
         'summary': summary,
@@ -69,166 +109,6 @@ def book_appointment(event_json):
     print('Event created: %s' % (event.get('htmlLink')))
     return event.get('htmlLink')
 
-def check_slots(event_json):
-    """
-    Checks for available time slots in Google Calendar.
-    Args:
-        event_json (dict): Dictionary with event details. Should contain keys like 'start_datetime', 'end_datetime', 'timezone'.
-    Returns:
-        dict: Dictionary with availability information including conflicts and available slots.
-    """
-    start_datetime = event_json.get('start')['dateTime']
-    end_datetime = event_json.get('end')['dateTime']
-    timezone = event_json.get('timeZone', 'UTC')
-    
-    creds = None
-    if os.path.exists('token.pickle'):
-        with open('token.pickle', 'rb') as token:
-            creds = pickle.load(token)
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES)
-            creds = flow.run_local_server(port=0)
-        with open('token.pickle', 'wb') as token:
-            pickle.dump(creds, token)
-
-    service = build('calendar', 'v3', credentials=creds)
-    
-    # Convert datetime strings to datetime objects for comparison
-    start_dt = datetime.datetime.fromisoformat(start_datetime.replace('Z', '+00:00'))
-    end_dt = datetime.datetime.fromisoformat(end_datetime.replace('Z', '+00:00'))
-    
-    # Get events that overlap with the requested time slot
-    events_result = service.events().list(
-        calendarId='primary',
-        timeMin=start_datetime,
-        timeMax=end_datetime,
-        singleEvents=True,
-        orderBy='startTime'
-    ).execute()
-    
-    events = events_result.get('items', [])
-    
-    # Check for conflicts
-    conflicts = []
-    for event in events:
-        event_start = event['start'].get('dateTime', event['start'].get('date'))
-        event_end = event['end'].get('dateTime', event['end'].get('date'))
-        
-        # Convert to datetime objects for comparison
-        event_start_dt = datetime.datetime.fromisoformat(event_start.replace('Z', '+00:00'))
-        event_end_dt = datetime.datetime.fromisoformat(event_end.replace('Z', '+00:00'))
-        
-        # Check if there's an overlap
-        if (start_dt < event_end_dt and end_dt > event_start_dt):
-            conflicts.append({
-                'summary': event.get('summary', 'No title'),
-                'start': event_start,
-                'end': event_end,
-                'description': event.get('description', '')
-            })
-    
-    # Determine availability
-    is_available = len(conflicts) == 0
-    
-    return {
-        'is_available': is_available,
-        'requested_start': start_datetime,
-        'requested_end': end_datetime,
-        'conflicts': conflicts,
-        'conflict_count': len(conflicts)
-    }
-
-def find_available_slots(event_json, slot_duration_minutes=60, business_hours=None):
-    """
-    Finds available time slots within a given date range.
-    Args:
-        start_date (str): Start date in ISO format (e.g., '2024-01-15T00:00:00Z')
-        end_date (str): End date in ISO format (e.g., '2024-01-16T00:00:00Z')
-        slot_duration_minutes (int): Duration of each slot in minutes (default: 60)
-        business_hours (dict): Business hours configuration. If None, uses 9 AM to 5 PM.
-                              Format: {'start': '09:00', 'end': '17:00', 'timezone': 'UTC'}
-    Returns:
-        list: List of available time slots as dictionaries with start and end times.
-    """
-    start_date = event_json.get('start')['dateTime']
-    end_date = event_json.get('end')['dateTime']
-    timezone = event_json.get('timeZone', 'UTC')
-
-    if business_hours is None:
-        business_hours = {'start': '09:00', 'end': '17:00', 'timezone': 'UTC'}
-    
-    creds = None
-    if os.path.exists('token.pickle'):
-        with open('token.pickle', 'rb') as token:
-            creds = pickle.load(token)
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES)
-            creds = flow.run_local_server(port=0)
-        with open('token.pickle', 'wb') as token:
-            pickle.dump(creds, token)
-
-    service = build('calendar', 'v3', credentials=creds)
-    
-    # Get all events in the date range
-    events_result = service.events().list(
-        calendarId='primary',
-        timeMin=start_date,
-        timeMax=end_date,
-        singleEvents=True,
-        orderBy='startTime'
-    ).execute()
-    
-    events = events_result.get('items', [])
-    
-    # Convert dates to datetime objects
-    start_dt = datetime.datetime.fromisoformat(start_date.replace('Z', '+00:00'))
-    end_dt = datetime.datetime.fromisoformat(end_date.replace('Z', '+00:00'))
-    
-    # Generate all possible slots
-    available_slots = []
-    current_dt = start_dt
-    
-    while current_dt < end_dt:
-        # Check if current time is within business hours
-        current_time = current_dt.strftime('%H:%M')
-        if business_hours['start'] <= current_time <= business_hours['end']:
-            slot_end = current_dt + datetime.timedelta(minutes=slot_duration_minutes)
-            
-            # Check if this slot conflicts with any existing events
-            slot_available = True
-            for event in events:
-                event_start = event['start'].get('dateTime', event['start'].get('date'))
-                event_end = event['end'].get('dateTime', event['end'].get('date'))
-                
-                # Convert to datetime objects
-                event_start_dt = datetime.datetime.fromisoformat(event_start.replace('Z', '+00:00'))
-                event_end_dt = datetime.datetime.fromisoformat(event_end.replace('Z', '+00:00'))
-                
-                # Check for overlap
-                if (current_dt < event_end_dt and slot_end > event_start_dt):
-                    slot_available = False
-                    break
-            
-            if slot_available:
-                available_slots.append({
-                    'start': current_dt.isoformat(),
-                    'end': slot_end.isoformat(),
-                    'duration_minutes': slot_duration_minutes
-                })
-        
-        # Move to next slot
-        current_dt += datetime.timedelta(minutes=slot_duration_minutes)
-    
-    return available_slots
-
 def analyze_slots_status(event_json):
     """
     Analyzes the status of every slot within a given time range.
@@ -245,21 +125,7 @@ def analyze_slots_status(event_json):
     timezone = event_json.get('timeZone', 'UTC')
     slot_duration_minutes = event_json.get('duration')
 
-    creds = None
-    if os.path.exists('token.pickle'):
-        with open('token.pickle', 'rb') as token:
-            creds = pickle.load(token)
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES)
-            creds = flow.run_local_server(port=0)
-        with open('token.pickle', 'wb') as token:
-            pickle.dump(creds, token)
-
-    service = build('calendar', 'v3', credentials=creds)
+    service = build('calendar', 'v3', credentials=get_creds())
     
     # Get all events in the date range
     events_result = service.events().list(

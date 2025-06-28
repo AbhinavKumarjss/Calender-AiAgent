@@ -29,10 +29,10 @@ class state:
     def gemini_reasoner(state : AgentState) -> AgentState:
         response = model.generate_content(Prompt.GeminiResponserPrompt(state['chat_history']))
         JsonResponse = extract_json(response.text)
-        print("Raw response:", response.text)
-        print("Extracted JSON:", JsonResponse)
+        # print("Raw response:", response.text)
+        # print("Extracted JSON:", JsonResponse)
         if "Intent"  in JsonResponse:
-            print("Intent detected")
+            # print("Intent detected")
             state['intent'] = JsonResponse['Intent']
             state['appointment_info'] = JsonResponse
         else:
@@ -45,12 +45,12 @@ class state:
         slots_data = analyze_slots_status(state['appointment_info']['event'])
         response = model.generate_content(Prompt.CheckAvailabilityPrompt(slots_data,state['chat_history']))
         JsonResponse = extract_json(response.text)
-        print("JsonResponse:",JsonResponse)
+        # print("JsonResponse:",JsonResponse)
         if JsonResponse['occupied']:
             state['intent'] = 'Check'
             state['final_response'] = JsonResponse['response']
         else:
-            state['final_response'] = response.text
+            state['final_response'] = JsonResponse['response']
         return state
     
     def book_appointment(state : AgentState) -> AgentState:
