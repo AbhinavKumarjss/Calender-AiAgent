@@ -28,37 +28,6 @@ def get_creds():
         with open('token.pickle', 'rb') as token:
             creds = pickle.load(token)
     
-    # If there are no (valid) credentials available, let the user log in
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            # Create client config from environment variables
-            client_config = {
-                "web": {
-                    "client_id": config.GOOGLE_CLIENT_ID,
-                    "client_secret": config.GOOGLE_CLIENT_SECRET,
-                    "auth_uri": config.GOOGLE_AUTH_URI or "https://accounts.google.com/o/oauth2/auth",
-                    "token_uri": config.GOOGLE_TOKEN_URI or "https://oauth2.googleapis.com/token",
-                    "auth_provider_x509_cert_url": config.GOOGLE_CERT_URL or "https://www.googleapis.com/oauth2/v1/certs",
-                    "redirect_uris": [config.GOOGLE_REDIRECT_URI or "http://localhost"]
-                }
-            }
-            
-            # Create flow from client config
-            flow = Flow.from_client_config(
-                client_config,
-                scopes=SCOPES,
-                redirect_uri=config.GOOGLE_REDIRECT_URI or "http://localhost"
-            )
-            
-            # Run the OAuth flow
-            creds = flow.run_local_server(port=0)
-        
-        # Save the credentials for the next run
-        with open('token.pickle', 'wb') as token:
-            pickle.dump(creds, token)
-    
     return creds
 
 def book_appointment(event_json):
