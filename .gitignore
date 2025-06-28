@@ -1,2 +1,4 @@
 __pycache__
 tailortalk-env
+credentials.json
+.env
