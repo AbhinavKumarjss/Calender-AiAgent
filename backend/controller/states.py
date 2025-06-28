@@ -1,9 +1,9 @@
 from typing import TypedDict,List,Optional,Dict
 import google.generativeai as genai
-from ..config import config
-from .prompt import Prompt
-from .utils import extract_json
-from .calender import book_appointment,analyze_slots_status
+from config import config
+from controller.prompt import Prompt
+from controller.utils import extract_json
+from controller.calender import book_appointment,analyze_slots_status
 #########################
 #     CONFIGURATIONS    #
 #########################

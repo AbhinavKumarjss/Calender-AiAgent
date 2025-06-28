@@ -2,7 +2,7 @@ from fastapi import FastAPI
 import uvicorn
 import os
 
-from .routes import chat
+from routes import chat
 app = FastAPI()
 
 

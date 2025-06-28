@@ -1,5 +1,5 @@
 from langgraph.graph import StateGraph,START,END
-from .states import AgentState,state
+from controller.states import AgentState, state
 graph = StateGraph(AgentState)
 
 graph.add_node("GeminiResponder" ,state.gemini_reasoner)

@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import List
 from fastapi.responses import JSONResponse
-from ..controller.controller import agent
+from controller.controller import agent
 
 AGENT_MEMORY = 20
 
