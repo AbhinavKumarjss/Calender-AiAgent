@@ -1,6 +1,6 @@
 from typing import TypedDict,List,Optional,Dict
 import google.generativeai as genai
-from config import config
+from backend.config import config
 from controller.prompt import Prompt
 from controller.utils import extract_json
 from controller.calender import book_appointment,analyze_slots_status
