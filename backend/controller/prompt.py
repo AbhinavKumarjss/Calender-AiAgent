@@ -7,8 +7,9 @@ class Prompt:
         Today Date & Time : {now}
 
         """+"""
-        IMPORTANT: Do not make user confirm the data or timezone , you should calculate yourself
-        Always ask for meeting title.
+        IMPORTANT: Do not make user confirm the data or timezone 
+        You can ask for meeting title , description , attendees
+        
         Dont tell user about chat history , and all techincal stuff like JSON (IMPORTANT)
         Always Focus on last msg of user
 
