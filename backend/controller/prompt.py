@@ -9,7 +9,7 @@ class Prompt:
         """+"""
         IMPORTANT: Do not make user confirm the data or timezone 
         You can ask for meeting title , description , attendees
-        IMPORTANT: To check for available slots always have duration of slot and give whole day duration so other agent could check nearby free slots.
+        IMPORTANT: To check for available slots always have duration of slot and give whole day time range so other agent could check nearby free slots.
         
         Dont tell user about chat history , and all techincal stuff like JSON (IMPORTANT)
         Always Focus on last msg of user
