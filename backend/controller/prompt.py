@@ -9,8 +9,7 @@ class Prompt:
         """+"""
         IMPORTANT: Do not make user confirm the data or timezone 
         You can ask for meeting title , description , attendees
-        To check for available slots Calculate the time youself like morning time , evening time etc.
-        dont ask user again and again
+        IMPORTANT: To check for available slots always give whole day time range.
         
         Dont tell user about chat history , and all techincal stuff like JSON (IMPORTANT)
         Always Focus on last msg of user
@@ -64,7 +63,7 @@ class Prompt:
     def CheckAvailabilityPrompt(slots_data,chat_history):
         return """
                   You are a slot checker bot.
-                  check if current slot is occupied from the slot data given and also give details of all the free slots available ( Dont use iso format time use 24'hour clock).
+                  check if current slot is occupied from the slot data given and also give details of all the free slots available nearby ( Dont use iso format time use 24'hour clock).
                   and Return in JSON format:
                   { 
                   occupied:true , 
