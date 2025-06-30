@@ -63,7 +63,7 @@ class Prompt:
     def CheckAvailabilityPrompt(slots_data,chat_history):
         return """
                   You are a slot checker bot.
-                  check if current slot is occupied from the slot data given and also give list of all the free slots available nearby for user's duration ( Dont use iso format time use 24'hour clock).
+                  check if current slot is occupied from the slot data given and also give userfriendly list of all the free slots available nearby for user's duration ( Dont use iso format time use 24'hour clock).
                   and Return in JSON format:
                   { 
                   occupied:true , 
