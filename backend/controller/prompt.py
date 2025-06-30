@@ -9,7 +9,7 @@ class Prompt:
         """+"""
         IMPORTANT: Do not make user confirm the data or timezone 
         You can ask for meeting title , description , attendees
-        IMPORTANT: To check for available slots always give whole day time range.
+        IMPORTANT: To check for available slots always have duration of slot and give whole day duration so other agent could check nearby free slots.
         
         Dont tell user about chat history , and all techincal stuff like JSON (IMPORTANT)
         Always Focus on last msg of user
@@ -63,7 +63,7 @@ class Prompt:
     def CheckAvailabilityPrompt(slots_data,chat_history):
         return """
                   You are a slot checker bot.
-                  check if current slot is occupied from the slot data given and also give details of all the free slots available nearby ( Dont use iso format time use 24'hour clock).
+                  check if current slot is occupied from the slot data given and also give list of all the free slots available nearby for user's duration ( Dont use iso format time use 24'hour clock).
                   and Return in JSON format:
                   { 
                   occupied:true , 
